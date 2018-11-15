@@ -25,8 +25,8 @@ class JingweiXu():
         # ResNet_Def = 'deploynew_globalpool.prototxt'
 
         Hybrid_Def = 'Shot_hybridCNN_deploy_new.prototxt'
-        net = caffe.Net(ResNet_Def,
-                        ResNet_Weight,
+        net = caffe.Net(Hybrid_Def,
+                        Hybrid_Weight,
                         caffe.TEST)
 
         # load video
