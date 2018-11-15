@@ -59,7 +59,7 @@ class JingweiXu():
 
         net.blobs['data'].reshape(1,
                                   3,
-                                  224, 224)
+                                  227, 227)
 
         FrameV = []
 
@@ -191,13 +191,21 @@ class JingweiXu():
     def getD1(self, Segment):
         return self.cosin_distance(Segment[0], Segment[-1])
 
+
+
+    # Check the segments selected (by the function called CutVideoIntoSegments) whether have cut
+    def CheckSegments(self, CandidateSegments):
+        GroundTruth = []
+        with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
+            GroundTruth = f.read()
+
     # CT Detection
     def CTDetection(self):
         import matplotlib.pyplot as plt
         import numpy as np
 
-        k = 0.55
-        Tc = 0.6
+        k = 0.4
+        Tc = 0.55
 
         CandidateSegments = self.CutVideoIntoSegments()
         # for i in range(len(CandidateSegments)):
