@@ -71,8 +71,8 @@ class JingweiXu():
             transformed_image = transformer.preprocess('data', frame)
             net.blobs['data'].data[...] = transformed_image
             output = net.forward()
-            #FrameV.extend(output['score'][0].tolist())
-            FrameV.extend(np.squeeze(output['global_pool'][0]).tolist())
+            FrameV.extend(output['fc8'][0].tolist())
+            #FrameV.extend(np.squeeze(output['global_pool'][0]).tolist())
             return FrameV
 
         for i in range(segments[0], segments[1]+1):
@@ -84,8 +84,8 @@ class JingweiXu():
             transformed_image = transformer.preprocess('data', frame)
             net.blobs['data'].data[...] = transformed_image
             output = net.forward()
-            #FrameV.append(output['score'][0].tolist())
-            FrameV.append(np.squeeze(output['global_pool'][0]).tolist())
+            FrameV.append(output['fc8'][0].tolist())
+            # FrameV.append(np.squeeze(output['global_pool'][0]).tolist())
 
         return FrameV
 
