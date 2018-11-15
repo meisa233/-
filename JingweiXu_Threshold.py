@@ -199,6 +199,12 @@ class JingweiXu():
         with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
             GroundTruth = f.read()
 
+        for i in range(len(GroundTruth)):
+            for j in range(len(CandidateSegments)):
+                if GroundTruth[i][1] >= CandidateSegments[j][0] && GroundTruth[i+1][0] <= CandidateSegments[j][0]:
+                    break
+                elif GroundTruth[i][1] < CandidateSegments[j][0]:
+                    print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
     # CT Detection
     def CTDetection(self):
         import matplotlib.pyplot as plt
