@@ -195,17 +195,26 @@ class JingweiXu():
 
     # Check the segments selected (by the function called CutVideoIntoSegments) whether have cut
     def CheckSegments(self, CandidateSegments):
+
+        import numpy as np
+
         GroundTruth = []
         with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
             GroundTruth = f.readlines()
 
         GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
+
+        GradualTransitionNumber = 0
         for i in range(0, len(GroundTruth)-1):
+            if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
+                GradualTransitionNumber = GradualTransitionNumber + 1
+                print 'Gradual Transition ',GradualTransitionNumber, ':', GroundTruth[i][1], GroundTruth[i+1][0],'\n'
             for j in range(len(CandidateSegments)):
-                if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][0]:
+                if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][1]:
                     break
                 elif GroundTruth[i][1] < CandidateSegments[j][0]:
                     print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
+                    break
     # CT Detection
     def CTDetection(self):
         import matplotlib.pyplot as plt
@@ -231,8 +240,8 @@ class JingweiXu():
                 for j in range(len(CandidateFrame) - 1):
                     D1Sequence.append(self.cosin_distance(CandidateFrame[j], CandidateFrame[j+1]))
                 if np.min(D1Sequence) < k*D1+(1-k):
-                    if np.max(D1Sequence)- np.min(D1Sequence) > Tc:
-                        print np.argmin(D1Sequence)
+                    #if np.max(D1Sequence)- np.min(D1Sequence) > Tc:
+                        #print np.argmin(D1S equence)
 
             # # plot the image
             #
