@@ -204,17 +204,27 @@ class JingweiXu():
 
         GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
 
+
+        # It save the hardcut truth
+        HardCutTruth = []
+
         GradualTransitionNumber = 0
         for i in range(0, len(GroundTruth)-1):
             if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
                 GradualTransitionNumber = GradualTransitionNumber + 1
                 print 'Gradual Transition ',GradualTransitionNumber, ':', GroundTruth[i][1], GroundTruth[i+1][0],'\n'
+            else:
+                HardCutTruth.append([GroundTruth[i][1], GroundTruth[i+1][0]])
+
             for j in range(len(CandidateSegments)):
                 if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][1]:
                     break
                 elif GroundTruth[i][1] < CandidateSegments[j][0]:
                     print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
                     break
+
+        return HardCutTruth
+
     # CT Detection
     def CTDetection(self):
         import matplotlib.pyplot as plt
@@ -226,7 +236,12 @@ class JingweiXu():
         CandidateSegments = self.CutVideoIntoSegments()
         # for i in range(len(CandidateSegments)):
         #     FrameV = self.get_vector(CandidateSegments[i])
-        self.CheckSegments(CandidateSegments)
+        HardCutTruth = self.CheckSegments(CandidateSegments)
+
+        # It save the predicted shot boundaries
+        Answer = []
+
+
         for i in range(len(CandidateSegments)):
             FrameV = []
             FrameV.append(self.get_vector([CandidateSegments[i][0]]))
@@ -240,9 +255,31 @@ class JingweiXu():
                 for j in range(len(CandidateFrame) - 1):
                     D1Sequence.append(self.cosin_distance(CandidateFrame[j], CandidateFrame[j+1]))
                 if np.min(D1Sequence) < k*D1+(1-k):
+                    Answer.append([CandidateSegments[i][0]+np.argmin(D1Sequence), CandidateSegments[i][0]+np.argmin(D1Sequence)+1])
+                    for i in Answer:
+                        if i not in HardCutTruth:
+                            print i
                     #if np.max(D1Sequence)- np.min(D1Sequence) > Tc:
-                        #print np.argmin(D1S equence)
+                        #print np.argmin(D1Sequence)
 
+
+        Miss = 0
+        True = 0
+        False = 0
+        for i in Answer:
+            if i not in HardCutTruth:
+                print 'False :', i, '\n'
+                False = False + 1
+            else:
+                True = True + 1
+
+        for i in HardCutTruth:
+            if i not in Answer:
+                Miss = Miss + 1
+
+        print 'False No. is', False,'\n'
+        print 'True No. is', True, '\n'
+        print 'Miss No. is', Miss, '\n'
             # # plot the image
             #
             # x = range(len(D1Sequence))
