@@ -199,6 +199,7 @@ class JingweiXu():
         with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
             GroundTruth = f.readlines()
 
+        GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
         for i in range(0, len(GroundTruth)-1):
             for j in range(len(CandidateSegments)):
                 if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][0]:
