@@ -197,11 +197,11 @@ class JingweiXu():
     def CheckSegments(self, CandidateSegments):
         GroundTruth = []
         with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
-            GroundTruth = f.read()
+            GroundTruth = f.readlines()
 
-        for i in range(len(GroundTruth)):
+        for i in range(0, len(GroundTruth)-1):
             for j in range(len(CandidateSegments)):
-                if GroundTruth[i][1] >= CandidateSegments[j][0] && GroundTruth[i+1][0] <= CandidateSegments[j][0]:
+                if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][0]:
                     break
                 elif GroundTruth[i][1] < CandidateSegments[j][0]:
                     print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
@@ -216,7 +216,7 @@ class JingweiXu():
         CandidateSegments = self.CutVideoIntoSegments()
         # for i in range(len(CandidateSegments)):
         #     FrameV = self.get_vector(CandidateSegments[i])
-
+        self.CheckSegments(CandidateSegments)
         for i in range(len(CandidateSegments)):
             FrameV = []
             FrameV.append(self.get_vector([CandidateSegments[i][0]]))
