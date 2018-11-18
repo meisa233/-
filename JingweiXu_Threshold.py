@@ -110,7 +110,7 @@ class JingweiXu():
         i_Video.set(1, segments[1])
         ret2, frame2 = i_Video.read()
 
-        frame1hist = cv2.calcHist(frame1,)
+        frame1hist = cv2.calcHist(frame1)
 
 
 
