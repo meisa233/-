@@ -1,4 +1,6 @@
 class JingweiXu():
+    Video_path = '/data/RAIDataset/Video/1.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
 
     def get_vector(self, segments):
         import sys
@@ -30,7 +32,7 @@ class JingweiXu():
                         caffe.TEST)
 
         # load video
-        i_Video = cv2.VideoCapture('/data/RAIDataset/Video/1.mp4')
+        i_Video = cv2.VideoCapture(self.Video_path)
 
         # get width of this video
         wid = int(i_Video.get(3))
@@ -101,7 +103,7 @@ class JingweiXu():
 
     def getHist(self, segments):
         import cv2
-        i_Video = cv2.VideoCapture('/data/RAIDataset/Video/1.mp4')
+        i_Video = cv2.VideoCapture(self.Video_path)
         i_Video.set(1, segments[0])
         ret1, frame1 = i_Video.read()
 
@@ -119,8 +121,8 @@ class JingweiXu():
 
         # It save the pixel intensity between 20n and 20(n+1)
         d = []
-        SegmentsLength = 21
-        i_Video = cv2.VideoCapture('/data/RAIDataset/Video/1.mp4')
+        SegmentsLength = 6
+        i_Video = cv2.VideoCapture(self.Video_path)
         if i_Video.isOpened():
             success = True
         else:
@@ -199,7 +201,7 @@ class JingweiXu():
         import numpy as np
 
         GroundTruth = []
-        with open('/data/RAIDataset/Video/gt_1.txt', 'r') as f:
+        with open(self.GroundTruth_path, 'r') as f:
             GroundTruth = f.readlines()
 
         GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
@@ -254,8 +256,13 @@ class JingweiXu():
                 CandidateFrame = self.get_vector(CandidateSegments[i])
                 for j in range(len(CandidateFrame) - 1):
                     D1Sequence.append(self.cosin_distance(CandidateFrame[j], CandidateFrame[j+1]))
+
+                if len([_ for _ in D1Sequence if _ < 0.9]) > 1:
+                    continue
                 if np.min(D1Sequence) < k*D1+(1-k):
                     Answer.append([CandidateSegments[i][0]+np.argmin(D1Sequence), CandidateSegments[i][0]+np.argmin(D1Sequence)+1])
+
+
                     for i in Answer:
                         if i not in HardCutTruth:
                             print i
