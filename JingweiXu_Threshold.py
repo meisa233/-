@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/1.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
+    Video_path = '/data/RAIDataset/Video/8.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_8.txt'
 
     def get_vector(self, segments):
         import sys
@@ -121,7 +121,7 @@ class JingweiXu():
 
         # It save the pixel intensity between 20n and 20(n+1)
         d = []
-        SegmentsLength = 6
+        SegmentsLength = 21
         i_Video = cv2.VideoCapture(self.Video_path)
         if i_Video.isOpened():
             success = True
