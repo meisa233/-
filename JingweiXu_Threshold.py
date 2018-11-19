@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/8.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_8.txt'
+    Video_path = '/data/RAIDataset/Video/1.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
 
     def get_vector(self, segments):
         import sys
@@ -229,11 +229,12 @@ class JingweiXu():
 
     # CT Detection
     def CTDetection(self):
+        import math
         import matplotlib.pyplot as plt
         import numpy as np
 
         k = 0.4
-        Tc = 0.55
+        Tc = 0.05
 
         CandidateSegments = self.CutVideoIntoSegments()
         # for i in range(len(CandidateSegments)):
@@ -243,6 +244,8 @@ class JingweiXu():
         # It save the predicted shot boundaries
         Answer = []
 
+        # It save the candidate segments which may have gradual
+        CandidateGra = []
 
         for i in range(len(CandidateSegments)):
             FrameV = []
@@ -258,14 +261,16 @@ class JingweiXu():
                     D1Sequence.append(self.cosin_distance(CandidateFrame[j], CandidateFrame[j+1]))
 
                 if len([_ for _ in D1Sequence if _ < 0.9]) > 1:
+                    CandidateGra.append([CandidateSegments[i][0],CandidateSegments[i][0]+20])
                     continue
                 if np.min(D1Sequence) < k*D1+(1-k):
-                    Answer.append([CandidateSegments[i][0]+np.argmin(D1Sequence), CandidateSegments[i][0]+np.argmin(D1Sequence)+1])
+                    if np.max(D1Sequence) - np.min(D1Sequence) >  Tc:
+                        Answer.append([CandidateSegments[i][0]+np.argmin(D1Sequence), CandidateSegments[i][0]+np.argmin(D1Sequence)+1])
+                    else:
+                        CandidateGra.append([CandidateSegments[i][0], CandidateSegments[i][0] + 20])
+                else:
+                    CandidateGra.append([CandidateSegments[i][0], CandidateSegments[i][0] + 20])
 
-
-                    for i in Answer:
-                        if i not in HardCutTruth:
-                            print i
                     #if np.max(D1Sequence)- np.min(D1Sequence) > Tc:
                         #print np.argmin(D1Sequence)
 
