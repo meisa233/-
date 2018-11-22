@@ -194,6 +194,49 @@ class JingweiXu():
         return self.cosin_distance(Segment[0], Segment[-1])
 
 
+####################################The Following is used for evaluating################################################
+    def if_overlap(begin1, end1, begin2, end2):
+        if begin1 > begin2:
+            begin1, end1, begin2, end2 = begin2, end2, begin1, end1
+
+        return end1 >= begin2
+
+    def get_union_cnt(self,set1, set2):
+        cnt = 0
+        for begin, end in set1:
+            for _begin, _end in set2:
+                if if_overlap(begin, end, _begin, _end):
+                    cnt += 1
+                    break
+        return cnt
+
+    def recall_pre_f1(a, b, c):
+        a = float(a)
+        b = float(b)
+        c = float(c)
+        recall = a / b if b != 0 else 0
+        precison = a / c if c != 0 else 0
+        f1 = 2 * recall * precison / (recall + precison)
+        return precison, recall, f1
+
+    def eval(self, predict, gt):
+
+
+        gt_cuts = [(begin,end) for begin,end in gt if end-begin==1]
+        gt_graduals = [(begin, end) for begin, end in gt if end - begin > 1]
+
+        predicts_cut = [(begin,end) for begin,end in predict if end-begin==1]
+        predicts_gradual = [(begin, end) for begin, end in predict if end - begin > 1]
+
+        cut_correct = self.get_union_cnt(gt_cuts, predicts_cut)
+        gradual_correct = self.get_union_cnt(gt_graduals, predicts_gradual)
+        all_correct = self.get_union_cnt(predicts_cut + predicts_gradual, gts)
+
+        return [cut_correct, gradual_correct, all_correct]
+
+    ##################################################################################
+
+
 
     # Check the segments selected (by the function called CutVideoIntoSegments) whether have cut
     def CheckSegments(self, CandidateSegments):
@@ -226,6 +269,8 @@ class JingweiXu():
                     break
 
         return HardCutTruth
+
+
 
     # CT Detection
     def CTDetection(self):
@@ -292,6 +337,9 @@ class JingweiXu():
         print 'False No. is', False,'\n'
         print 'True No. is', True, '\n'
         print 'Miss No. is', Miss, '\n'
+
+        [cut_correct, gradual_correct, all_correct] =self.eval(Answer, HardCutTruth)
+        print self.recall_pre_f1(cut_correct, len(HardCutTruth), len(Answer))
             # # plot the image
             #
             # x = range(len(D1Sequence))
