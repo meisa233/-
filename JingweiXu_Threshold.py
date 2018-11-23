@@ -195,7 +195,7 @@ class JingweiXu():
 
 
 ####################################The Following is used for evaluating################################################
-    def if_overlap(begin1, end1, begin2, end2):
+    def if_overlap(self, begin1, end1, begin2, end2):
         if begin1 > begin2:
             begin1, end1, begin2, end2 = begin2, end2, begin1, end1
 
@@ -205,7 +205,7 @@ class JingweiXu():
         cnt = 0
         for begin, end in set1:
             for _begin, _end in set2:
-                if if_overlap(begin, end, _begin, _end):
+                if self.if_overlap(begin, end, _begin, _end):
                     cnt += 1
                     break
         return cnt
