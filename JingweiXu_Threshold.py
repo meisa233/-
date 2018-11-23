@@ -201,6 +201,7 @@ class JingweiXu():
 
         return end1 >= begin2
 
+
     def get_union_cnt(self,set1, set2):
         cnt = 0
         for begin, end in set1:
