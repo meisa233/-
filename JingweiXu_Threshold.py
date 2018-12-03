@@ -211,7 +211,7 @@ class JingweiXu():
                     break
         return cnt
 
-    def recall_pre_f1(a, b, c):
+    def recall_pre_f1(self,a, b, c):
         a = float(a)
         b = float(b)
         c = float(c)
@@ -231,7 +231,7 @@ class JingweiXu():
 
         cut_correct = self.get_union_cnt(gt_cuts, predicts_cut)
         gradual_correct = self.get_union_cnt(gt_graduals, predicts_gradual)
-        all_correct = self.get_union_cnt(predicts_cut + predicts_gradual, gts)
+        all_correct = self.get_union_cnt(predicts_cut + predicts_gradual, gt)
 
         return [cut_correct, gradual_correct, all_correct]
 
@@ -251,12 +251,16 @@ class JingweiXu():
         GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
 
 
-        # It save the hardcut truth
+        # It save the Hardcut Truth
         HardCutTruth = []
 
+        # It save the Gradual Truth
+        GradualTruth  = []
         GradualTransitionNumber = 0
+
         for i in range(0, len(GroundTruth)-1):
             if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
+                GradualTruth.append([GroundTruth[i][1], GroundTruth[i+1][0]])
                 GradualTransitionNumber = GradualTransitionNumber + 1
                 print 'Gradual Transition ',GradualTransitionNumber, ':', GroundTruth[i][1], GroundTruth[i+1][0],'\n'
             else:
@@ -269,7 +273,7 @@ class JingweiXu():
                     print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
                     break
 
-        return HardCutTruth
+        return [HardCutTruth, GradualTruth]
 
 
 
@@ -285,7 +289,7 @@ class JingweiXu():
         CandidateSegments = self.CutVideoIntoSegments()
         # for i in range(len(CandidateSegments)):
         #     FrameV = self.get_vector(CandidateSegments[i])
-        HardCutTruth = self.CheckSegments(CandidateSegments)
+        [HardCutTruth, GradualTruth] = self.CheckSegments(CandidateSegments)
 
         # It save the predicted shot boundaries
         Answer = []
