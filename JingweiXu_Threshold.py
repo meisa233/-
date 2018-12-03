@@ -20,15 +20,18 @@ class JingweiXu():
         # ResNet_Weight = './resnet50_cvgj_iter_320000.caffemodel'  # pretrained on il 2012 and place 205
 
         os.chdir('/data/Meisa/hybridCNN')
-        Hybrid_Weight = './hybridCNN_iter_700000.caffemodel'
+        # Hybrid_Weight = './hybridCNN_iter_700000.caffemodel'
 
 
 
         # ResNet_Def = 'deploynew_globalpool.prototxt'
 
-        Hybrid_Def = 'Shot_hybridCNN_deploy_new.prototxt'
-        net = caffe.Net(Hybrid_Def,
-                        Hybrid_Weight,
+        # Hybrid_Def = 'Shot_hybridCNN_deploy_new.prototxt'
+
+        Alexnet_Def = '/data/alexnet/deploy_alexnet_places365.prototxt.txt'
+        Alexnet_Weight = '/data/alexnet/alexnet_places365.caffemodel'
+        net = caffe.Net(Alexnet_Def,
+                        Alexnet_Weight,
                         caffe.TEST)
 
         # load video
