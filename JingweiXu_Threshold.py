@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/1.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
+    Video_path = '/data/RAIDataset/Video/8.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_8.txt'
 
     def get_vector(self, segments):
         import sys
@@ -20,18 +20,18 @@ class JingweiXu():
         # ResNet_Weight = './resnet50_cvgj_iter_320000.caffemodel'  # pretrained on il 2012 and place 205
 
         os.chdir('/data/Meisa/hybridCNN')
-        # Hybrid_Weight = './hybridCNN_iter_700000.caffemodel'
+        Hybrid_Weight = './hybridCNN_iter_700000.caffemodel'
 
 
 
         # ResNet_Def = 'deploynew_globalpool.prototxt'
 
-        # Hybrid_Def = 'Shot_hybridCNN_deploy_new.prototxt'
+        Hybrid_Def = 'Shot_hybridCNN_deploy_new.prototxt'
 
         Alexnet_Def = '/data/alexnet/deploy_alexnet_places365.prototxt.txt'
         Alexnet_Weight = '/data/alexnet/alexnet_places365.caffemodel'
-        net = caffe.Net(Alexnet_Def,
-                        Alexnet_Weight,
+        net = caffe.Net(Hybrid_Def,
+                        Hybrid_Weight,
                         caffe.TEST)
 
         # load video
@@ -104,18 +104,25 @@ class JingweiXu():
 
 
 
-    def getHist(self, segments):
+    def Manhattan(self, vector1, vector2):
+        import numpy as np
+        return np.sum(np.abs(vector1 - vector2))
+
+
+    def getHist(self, frame1, frame2, allpixels):
+        binsnumber = 64
         import cv2
-        i_Video = cv2.VideoCapture(self.Video_path)
-        i_Video.set(1, segments[0])
-        ret1, frame1 = i_Video.read()
+        Bframe1hist = cv2.calcHist([frame1], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Bframe2hist = cv2.calcHist([frame2], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
 
-        i_Video.set(1, segments[1])
-        ret2, frame2 = i_Video.read()
+        Gframe1hist = cv2.calcHist([frame1], channels=[1], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Gframe2hist = cv2.calcHist([frame2], channels=[1], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
 
-        frame1hist = cv2.calcHist(frame1)
+        Rframe1hist = cv2.calcHist([frame1], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Rframe2hist = cv2.calcHist([frame2], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
 
-
+        distance = self.Manhattan(Bframe1hist, Bframe2hist) + self.Manhattan(Gframe1hist, Gframe2hist) + self.Manhattan(Rframe1hist, Rframe2hist)
+        return distance/(allpixels)
 
     def CutVideoIntoSegments(self):
         import math
@@ -126,6 +133,13 @@ class JingweiXu():
         d = []
         SegmentsLength = 21
         i_Video = cv2.VideoCapture(self.Video_path)
+
+        # get width of this video
+        wid = int(i_Video.get(3))
+
+        # get height of this video
+        hei = int(i_Video.get(4))
+
         if i_Video.isOpened():
             success = True
         else:
@@ -145,13 +159,16 @@ class JingweiXu():
             if((SegmentsLength-1)*(i+1)) >= FrameNumber:
                 i_Video.set(1, FrameNumber-1)
                 ret2, frame_20i1 = i_Video.read()
-                d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+                # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+
+                d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
                 break
 
             i_Video.set(1, (SegmentsLength-1)*(i+1))
             ret2, frame_20i1 = i_Video.read()
 
-            d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+            # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+            d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
 
 
         # The number of group
@@ -360,5 +377,5 @@ class JingweiXu():
 
 if __name__ == '__main__':
     test1 = JingweiXu()
-    #test1.CutVideoIntoSegments()
     test1.CTDetection()
+    # test1.CutVideoIntoSegments()
