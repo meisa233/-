@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/8.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_8.txt'
+    Video_path = '/data/RAIDataset/Video/1.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
 
     def get_vector(self, segments):
         import sys
