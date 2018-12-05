@@ -103,7 +103,7 @@ class JingweiXu():
         return np.dot(RGBImage[..., :3], [0.299, 0.587, 0.114])
 
 
-
+    # Get the Manhattan Distance
     def Manhattan(self, vector1, vector2):
         import numpy as np
         return np.sum(np.abs(vector1 - vector2))
