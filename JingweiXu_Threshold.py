@@ -124,6 +124,25 @@ class JingweiXu():
         distance = self.Manhattan(Bframe1hist, Bframe2hist) + self.Manhattan(Gframe1hist, Gframe2hist) + self.Manhattan(Rframe1hist, Rframe2hist)
         return distance/(allpixels)
 
+    def getHist_chi_square(self, frame1, frame2, allpixels):
+
+        import cv2
+
+        binsnumber = 64
+
+        Bframe1hist = cv2.calcHist([frame1], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Bframe2hist = cv2.calcHist([frame2], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+
+        Gframe1hist = cv2.calcHist([frame1], channels=[1], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Gframe2hist = cv2.calcHist([frame2], channels=[1], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+
+        Rframe1hist = cv2.calcHist([frame1], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Rframe2hist = cv2.calcHist([frame2], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+
+        distance = cv2.compareHist(Bframe1hist, Bframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Gframe1hist, Gframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Rframe1hist, Rframe2hist, method=cv2.HISTCMP_CHISQR)
+        return distance/(allpixels)
+
+
     def CutVideoIntoSegments(self):
         import math
         import cv2
@@ -131,7 +150,7 @@ class JingweiXu():
 
         # It save the pixel intensity between 20n and 20(n+1)
         d = []
-        SegmentsLength = 21
+        SegmentsLength = 11
         i_Video = cv2.VideoCapture(self.Video_path)
 
         # get width of this video
@@ -264,40 +283,152 @@ class JingweiXu():
 
         import numpy as np
 
-        GroundTruth = []
+        # It save the cut missed
+        MissCutTruth = []
+        # It save the gradual missed
+        MissGra = []
+
         with open(self.GroundTruth_path, 'r') as f:
             GroundTruth = f.readlines()
 
         GroundTruth = [[int(i.strip().split('\t')[0]),int(i.strip().split('\t')[1])] for i in GroundTruth]
 
+        TransitionNumber = len(GroundTruth)
 
         # It save the Hardcut Truth
         HardCutTruth = []
 
         # It save the Gradual Truth
         GradualTruth  = []
-        GradualTransitionNumber = 0
 
+        GradualTransitionNumber = 0
+        HardTruthNumber = 0
         for i in range(0, len(GroundTruth)-1):
             if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
                 GradualTruth.append([GroundTruth[i][1], GroundTruth[i+1][0]])
-                GradualTransitionNumber = GradualTransitionNumber + 1
-                print 'Gradual Transition ',GradualTransitionNumber, ':', GroundTruth[i][1], GroundTruth[i+1][0],'\n'
+                GradualTransitionNumber += 1
             else:
                 HardCutTruth.append([GroundTruth[i][1], GroundTruth[i+1][0]])
+                HardTruthNumber +=1
 
             for j in range(len(CandidateSegments)):
-                if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][1]:
+                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GroundTruth[i][1], GroundTruth[i+1][0]):
                     break
-                elif GroundTruth[i][1] < CandidateSegments[j][0]:
-                    print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
+                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GroundTruth[i][1], GroundTruth[i+1][0]) is False and GroundTruth[i+1][0] < CandidateSegments[j][0]:
+                    if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
+                        MissGra.append([GroundTruth[i][1],GroundTruth[i+1][0]])
+                    else:
+                        MissCutTruth.append([GroundTruth[i][1],GroundTruth[i+1][0]])
                     break
+
+        print 'Hard Rate is ', (HardTruthNumber - len(MissCutTruth))/float(HardTruthNumber)
+        print 'Gra Rate is ', (GradualTransitionNumber - len(MissGra))/float(GradualTransitionNumber)
+                # if GroundTruth[i][1] >= CandidateSegments[j][0] and GroundTruth[i+1][0] <= CandidateSegments[j][1]:
+                #     break
+                # elif GroundTruth[i][1] < CandidateSegments[j][0]:
+                #     if np.abs(GroundTruth[i][1] - GroundTruth[i + 1][0]) != 1:
+                #         MissGra.append([GroundTruth[i][1],GroundTruth[i+1][0]])
+                #     else:
+                #         MissCutTruth.append([GroundTruth[i][1],GroundTruth[i+1][0]])
+
+                    # print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
+                    # break
 
         return [HardCutTruth, GradualTruth]
 
 
 
-    # CT Detection
+
+
+    def CTDetectionBaseOnHist(self):
+        import numpy as np
+        import cv2
+
+        k = 0.4
+        Tc = 0.05
+
+        CandidateSegments = self.CutVideoIntoSegments()
+        # for i in range(len(CandidateSegments)):
+        #     FrameV = self.get_vector(CandidateSegments[i])
+        [HardCutTruth, GradualTruth] = self.CheckSegments(CandidateSegments)
+
+        # It save the predicted shot boundaries
+        Answer = []
+
+        # It save the candidate segments which may have gradual
+        CandidateGra = []
+
+        i_Video = cv2.VideoCapture(self.Video_path)
+
+        # get width of this video
+        wid = int(i_Video.get(3))
+
+        # get height of this video
+        hei = int(i_Video.get(4))
+
+        for i in range(len(CandidateSegments)):
+
+            i_Video.set(1, CandidateSegments[i][0])
+            ret1, frame1 = i_Video.read()
+
+            i_Video.set(1, CandidateSegments[i][1])
+            ret1, frame2 = i_Video.read()
+            HistDifference = []
+
+            AnswerLength = 0
+            if self.getHist_chi_square(frame1, frame2, wid*hei)>0.5:
+                for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
+
+                    i_Video.set(1, j)
+                    ret1_, frame1_ = i_Video.read()
+
+                    i_Video.set(1, j+1)
+                    ret2_, frame2_ = i_Video.read()
+
+                    HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
+                if np.max(HistDifference) > 2 and len([_ for _ in HistDifference if _ > 2]) == 1:
+                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
+                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 2 and (np.max(HistDifference)/np.min([_ for _ in HistDifference if _ >0.5])) >10:
+                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+
+
+                if len(Answer) > 1 and len(Answer) > AnswerLength:
+                    AnswerLength += 1
+                    if Answer[-1] not in HardCutTruth:
+                        print 'This a false cut'
+                    # Flag = False
+                    # for k in HardCutTruth:
+                    #     Flag = self.if_overlap(Answer[-1][0], Answer[-1][1], k[0], k[1])
+                    #     if Flag:
+                    #         break
+                    # if Flag is False:
+                    #     print 'This is a false cut: ', Answer[-1]
+            else:
+                for k in HardCutTruth:
+                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k[0], k[1]):
+                        print 'This cut has been missed : ', k
+        Miss = 0
+        True_ = 0
+        False_ = 0
+        for i in Answer:
+            if i not in HardCutTruth:
+                print 'False :', i, '\n'
+                False_ = False_ + 1
+            else:
+                True_ = True_ + 1
+
+        for i in HardCutTruth:
+            if i not in Answer:
+                Miss = Miss + 1
+
+        print 'False No. is', False_,'\n'
+        print 'True No. is', True_, '\n'
+        print 'Miss No. is', Miss, '\n'
+
+
+    # CT Detection base on CNN
     def CTDetection(self):
         import math
         import matplotlib.pyplot as plt
@@ -377,5 +508,7 @@ class JingweiXu():
 
 if __name__ == '__main__':
     test1 = JingweiXu()
-    test1.CTDetection()
+    # test1.CTDetection()
     # test1.CutVideoIntoSegments()
+
+    test1.CTDetectionBaseOnHist()
