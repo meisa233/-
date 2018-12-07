@@ -335,8 +335,20 @@ class JingweiXu():
                     # break
 
         return [HardCutTruth, GradualTruth]
+########################Hist Based Method#######################################
+    def Mnw(self, n, w, Frame):
+        # if n+w == int(n+w):
+        #     if int(n+w) >= len(self.Frame) or int(n-w) >= len(self.Frame):
+        #         return -1
+        #     return self.difference(self.Frame[int(n-w)], self.Frame[int(n+w)])
+        # else:
+        #     return (1. / 2.) * (self.Mnw(n - 0.5, w) + self.Mnw(n + 0.5, w))
 
+        if n+w == int(n+w):
 
+            return getHist_chi_square(self, Frame, frame2, allpixels))
+        else:
+            return (1. / 2.) * (self.Mnw(n - 0.5, w) + self.Mnw(n + 0.5, w))
 
 
 
@@ -365,7 +377,7 @@ class JingweiXu():
 
         # get height of this video
         hei = int(i_Video.get(4))
-
+        AnswerLength = 0
         for i in range(len(CandidateSegments)):
 
             i_Video.set(1, CandidateSegments[i][0])
@@ -375,7 +387,7 @@ class JingweiXu():
             ret1, frame2 = i_Video.read()
             HistDifference = []
 
-            AnswerLength = 0
+
             if self.getHist_chi_square(frame1, frame2, wid*hei)>0.5:
                 for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
 
@@ -386,7 +398,17 @@ class JingweiXu():
                     ret2_, frame2_ = i_Video.read()
 
                     HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
-                if np.max(HistDifference) > 2 and len([_ for _ in HistDifference if _ > 2]) == 1:
+                if np.max(HistDifference) > 2 and np.max(HistDifference) < 5 and len([_ for _ in HistDifference if _ > 2]) == 1:
+
+                    FrameV = []
+                    FrameV.append(self.get_vector([CandidateSegments[i][0]+np.argmax(HistDifference)]))
+                    FrameV.append(self.get_vector([CandidateSegments[i][-1]+np.argmax(HistDifference)+1]))
+
+                    cosin = self.getD1(FrameV)
+
+                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+
+                elif np.max(HistDifference) >=5 and len([_ for _ in HistDifference if _ > 2]) == 1:
                     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
                 elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
                     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
@@ -394,7 +416,7 @@ class JingweiXu():
                     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
 
 
-                if len(Answer) > 1 and len(Answer) > AnswerLength:
+                if len(Answer) > 0 and len(Answer) > AnswerLength:
                     AnswerLength += 1
                     if Answer[-1] not in HardCutTruth:
                         print 'This a false cut'
