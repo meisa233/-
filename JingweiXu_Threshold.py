@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/2.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_2.txt'
+    Video_path = '/data/RAIDataset/Video/4.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_4.txt'
 
     def get_vector(self, segments):
         import sys
@@ -366,7 +366,8 @@ class JingweiXu():
         # get height of this video
         hei = int(i_Video.get(4))
         AnswerLength = 0
-        for i in range(len(CandidateSegments)):
+        i = 0
+        while i < len(CandidateSegments):
 
             i_Video.set(1, CandidateSegments[i][0])
             ret1, frame1 = i_Video.read()
@@ -386,12 +387,43 @@ class JingweiXu():
                     ret2_, frame2_ = i_Video.read()
 
                     HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
-                if np.max(HistDifference) > 2 and len([_ for _ in HistDifference if _ > 2]) == 1:
+                # if np.max(HistDifference) > 2 and len([_ for _ in HistDifference if _ > 2]) == 1:
+                #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
+                #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 2 and (np.max(HistDifference)/np.min([_ for _ in HistDifference if _ >0.5])) >10:
+                #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                if len([_ for _ in HistDifference if _ >0.1]) > len(HistDifference)/2:
+                    i += 1
+                    continue
+                elif np.max(HistDifference) > 2 and len([_ for _ in HistDifference if _ > 2]) == 1:
                     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
-                elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
-                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
-                elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 2 and (np.max(HistDifference)/np.min([_ for _ in HistDifference if _ >0.5])) >10:
-                    Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
+                elif np.max(HistDifference) > 0.5:
+                    if len([_ for _ in HistDifference if _ >0.5]) == 1:
+                        Answer.append([CandidateSegments[i][0] + np.argmax(HistDifference),
+                                       CandidateSegments[i][0] + np.argmax(HistDifference) + 1])
+                    else:
+                        newCandidate = []
+                        i05index = []
+                        i05 = 0
+                        i05begin = 0
+                        count = len([_ for _ in HistDifference if _>0.5])
+                        for index in range(len(HistDifference)):
+                            if HistDifference[index]>0.5:
+                                i05index.append(index)
+                                i05 += 1
+                        if i05index[0] == 0:
+                            i05begin=-1
+                        if i05index[-1] == len(HistDifference) - 1:
+                            i05index.append(len(HistDifference)+1)
+                        else:
+                            i05index.append(len(HistDifference))
+                        for index in range(len(i05index)-1):
+                            newCandidate.append([CandidateSegments[i][0]+i05begin, CandidateSegments[i][0]+i05index[index+1]-1])
+                            i05begin = i05index[index]+1
+
+                        for index in range(len(newCandidate)):
+                            CandidateSegments.insert(i+1+index, newCandidate[index])
 
 
                 if len(Answer) > 0 and len(Answer) > AnswerLength:
@@ -414,6 +446,8 @@ class JingweiXu():
                 for k2 in HardCutTruth:
                     if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]):
                         print 'This cut has been missed : ', k2
+
+            i += 1
         Miss = 0
         True_ = 0
         False_ = 0
