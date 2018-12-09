@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/1.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_1.txt'
+    Video_path = '/data/RAIDataset/Video/2.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_2.txt'
 
     def get_vector(self, segments):
         import sys
@@ -432,7 +432,7 @@ class JingweiXu():
                         temp1 = diff[k]
                         temp1Index = k
 
-                    if temp1Index!=-1 and (np.abs(temp2-temp1)<0.1 or (temp1 > 5 and temp2 > 5 and np.abs(temp2-temp1)<1)) and np.abs(temp2-temp1)<MinDiff :
+                    if temp1Index!=-1 and np.abs(temp2-temp1)<1  and np.abs(temp2-temp1)<MinDiff :
                         CandidateHardCut=[CandidateSegments[i][0]+temp1Index, CandidateSegments[i][0]+temp2Index]
                         MinDiff = np.abs(temp2-temp1)
                         temp1 = temp2
