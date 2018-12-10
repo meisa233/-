@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/4.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_4.txt'
+    Video_path = '/data/RAIDataset/Video/10.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_10.txt'
 
     def get_vector(self, segments):
         import sys
@@ -150,7 +150,8 @@ class JingweiXu():
 
         # It save the pixel intensity between 20n and 20(n+1)
         d = []
-        SegmentsLength = 11
+        dIndex = []
+        SegmentsLength = 21
         i_Video = cv2.VideoCapture(self.Video_path)
 
         # get width of this video
@@ -178,29 +179,28 @@ class JingweiXu():
             if((SegmentsLength-1)*(i+1)) >= FrameNumber:
                 i_Video.set(1, FrameNumber-1)
                 ret2, frame_20i1 = i_Video.read()
-                # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+                d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
 
-                d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
+                # d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
+                dIndex.append([(SegmentsLength-1)*i, FrameNumber-1])
                 break
 
             i_Video.set(1, (SegmentsLength-1)*(i+1))
             ret2, frame_20i1 = i_Video.read()
 
-            # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
-            d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
-
+            d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+            # d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
+            dIndex.append([(SegmentsLength-1)*i, (SegmentsLength-1)*(i+1)])
 
 
         # The number of group
         GroupNumber = int(math.ceil(float(FrameNumber) / 10.0))
 
         MIUG = np.mean(d)
-        a = 0.5 # The range of a is 0.5~0.7
+        a = 0.7 # The range of a is 0.5~0.7
         Tl = [] # It save the Tl of each group
         CandidateSegment = []
         for i in range(GroupNumber):
-
-
 
             MIUL = np.mean(d[10*i:10*i+10])
             SigmaL = np.std(d[10*i:10*i+10])
@@ -213,7 +213,79 @@ class JingweiXu():
                     CandidateSegment.append([(i*10+j)*(SegmentsLength-1), (i*10+j+1)*(SegmentsLength-1)])
                     #print 'A candidate segment is', (i*10+j)*20, '~', (i*10+j+1)*20
 
-        return CandidateSegment
+        for i in range(1,len(d)-1):
+            if (d[i]>(3*d[i-1]) or d[i]>(3*d[i+1])) and d[i]> 0.8 * MIUG:
+                if [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)] not in CandidateSegment:
+                    j = 0
+                    while j < len(CandidateSegment):
+                        if (i+1)*(SegmentsLength-1)<= CandidateSegment[j][0]:
+                            CandidateSegment.insert(j, [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)])
+                            break
+                        j += 1
+
+        NewCandidateSegment = []
+        Gra = []
+        d10 = []
+        for i in range(len(CandidateSegment)):
+
+
+                i_Video.set(1, CandidateSegment[i][0]+(SegmentsLength-1)/2)
+                ret1, frame_10 = i_Video.read()
+
+                i_Video.set(1, CandidateSegment[i][0])
+                ret1, frame_0 = i_Video.read()
+
+                i_Video.set(1, CandidateSegment[i][1])
+                ret1, frame_20 = i_Video.read()
+
+                # d20F = self.getHist(frame_10, frame_0, wid*hei)
+                # d20B = self.getHist(frame_10, frame_20, wid*hei)
+
+                d20F = np.sum(np.abs(self.RGBToGray(frame_10) - self.RGBToGray(frame_0)))
+                d20B = np.sum(np.abs(self.RGBToGray(frame_10) - self.RGBToGray(frame_20)))
+
+                if d20F/d20B > 1.5 and d20F/d[dIndex.index(CandidateSegment[i])] > 0.7:
+                    NewCandidateSegment.append([CandidateSegment[i][0], CandidateSegment[i][0]+(SegmentsLength-1)/2])
+                    d10.append(d20F)
+                elif d20B/d20F > 1.5 and d20B/d[dIndex.index(CandidateSegment[i])] > 0.7:
+                    NewCandidateSegment.append([
+                        CandidateSegment[i][0] + (SegmentsLength - 1) / 2, CandidateSegment[i][1]])
+                    d10.append(d20B)
+                elif d20F/d[dIndex.index(CandidateSegment[i])] < 0.3 and d20B/d[dIndex.index(CandidateSegment[i])]<0.3:
+                    continue
+                else:
+                    Gra.append(CandidateSegment[i])
+
+        print 'A'
+        NewSegmentsLength = NewCandidateSegment[0][1]+1-NewCandidateSegment[0][0]
+        FinalSegments = []
+        Gra2 = []
+        for i in range(len(NewCandidateSegment)):
+
+            i_Video.set(1, NewCandidateSegment[i][0] + (NewSegmentsLength - 1) / 2)
+            ret1, frame_5 = i_Video.read()
+
+            i_Video.set(1, NewCandidateSegment[i][0])
+            ret1, frame_0 = i_Video.read()
+
+            i_Video.set(1, NewCandidateSegment[i][1])
+            ret1, frame_10 = i_Video.read()
+
+            d10F = self.getHist(frame_5, frame_0, wid * hei)
+            d10B = self.getHist(frame_5, frame_10, wid * hei)
+
+            if d10F / d10B > 1.5 and d10F / d10[i]> 0.7:
+                FinalSegments.append([NewCandidateSegment[i][0], NewCandidateSegment[i][0] + (NewSegmentsLength - 1) / 2])
+            elif d10B / d10F > 1.5 and d10B / d10[i] > 0.7:
+                FinalSegments.append([
+                    NewCandidateSegment[i][0] + (NewSegmentsLength - 1) / 2, NewCandidateSegment[i][1]])
+            elif d10F / d10[i] < 0.3 and d10B / d10[i] < 0.3:
+                continue
+            else:
+                Gra2.append(NewCandidateSegment[i])
+
+
+        return FinalSegments
         #print 'a'
 
 
