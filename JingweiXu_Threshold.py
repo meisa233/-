@@ -150,7 +150,7 @@ class JingweiXu():
 
         # It save the pixel intensity between 20n and 20(n+1)
         d = []
-        SegmentsLength = 21
+        SegmentsLength = 11
         i_Video = cv2.VideoCapture(self.Video_path)
 
         # get width of this video
