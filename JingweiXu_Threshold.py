@@ -421,6 +421,7 @@ class JingweiXu():
                         MAXValue = HistDifference[-1]-HistDifference[-2]
                     if MAXValue>-1:
                         Answer.append(([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1]))
+
                 #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
                 # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
                 #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
