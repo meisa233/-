@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/10.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_10.txt'
+    Video_path = '/data/RAIDataset/Video/7.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_7.txt'
 
     def get_vector(self, segments):
         import sys
@@ -317,27 +317,27 @@ class JingweiXu():
             d.append(self.cosin_distance(Frame_First, Frame_Last))
 
 
-
-            # The number of group
-        GroupNumber = int(math.ceil(float(FrameNumber) / 10.0))
+        GroupLength = 5
+        # The number of group
+        GroupNumber = int(math.ceil(float(FrameNumber) / GroupLength))
 
         MIUG = np.mean(d)
-        a = 0.5 # The range of a is 0.5~0.7
+        a = 0.7 # The range of a is 0.5~0.7
         Tl = [] # It save the Tl of each group
         CandidateSegment = []
         for i in range(GroupNumber):
 
 
 
-            MIUL = np.mean(d[10*i:10*i+10])
-            SigmaL = np.std(d[10*i:10*i+10])
+            MIUL = np.mean(d[GroupLength*i:GroupLength*i+GroupLength])
+            SigmaL = np.std(d[GroupLength*i:GroupLength*i+GroupLength])
 
             Tl.append(MIUL + a*(1+math.log(MIUG/MIUL))*SigmaL)
-            for j in range(10):
-                if i*10 + j >= len(d):
+            for j in range(GroupLength):
+                if i*GroupLength + j >= len(d):
                     break
-                if d[i*10+j]<Tl[i]:
-                    CandidateSegment.append([(i*10+j)*(SegmentsLength-1), (i*10+j+1)*(SegmentsLength-1)])
+                if d[i*GroupLength+j]<Tl[i]:
+                    CandidateSegment.append([(i*GroupLength+j)*(SegmentsLength-1), (i*GroupLength+j+1)*(SegmentsLength-1)])
                     #print 'A candidate segment is', (i*10+j)*20, '~', (i*10+j+1)*20
 
 
@@ -490,9 +490,9 @@ class JingweiXu():
         k = 0.4
         Tc = 0.05
 
-        CandidateSegments = self.CutVideoIntoSegments()
+        # CandidateSegments = self.CutVideoIntoSegments()
 
-        # CandidateSegments = self.CutVideoIntoSegmentsBaseOnNeuralNet()
+        CandidateSegments = self.CutVideoIntoSegmentsBaseOnNeuralNet()
 
         [HardCutTruth, GradualTruth] = self.CheckSegments(CandidateSegments)
 
