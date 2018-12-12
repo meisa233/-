@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/7.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_7.txt'
+    Video_path = '/data/RAIDataset/Video/10.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_10.txt'
 
     def get_vector(self, segments):
         import sys
@@ -226,6 +226,135 @@ class JingweiXu():
         return CandidateSegment
         #print 'a'
 
+    def CutVideoIntoSegmentsBaseOnNeuralNet(self):
+        import math
+        import cv2
+        import numpy as np
+        import caffe
+
+        caffe.set_mode_gpu()
+        caffe.set_device(0)
+
+        SqueezeNet_Def = '/data/SqueezeNet/deploy.prototxt'
+        SqueezeNet_Weight = '/data/SqueezeNet/squeezenet_v1.1.caffemodel'
+        net = caffe.Net(SqueezeNet_Def,
+                        SqueezeNet_Weight,
+                        caffe.TEST)
+        transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
+        transformer.set_transpose('data', (2, 0, 1))
+        # transformer.set_mean('data', mu)
+        transformer.set_raw_scale('data', 255)
+        transformer.set_channel_swap('data', (2, 1, 0))
+        net.blobs['data'].reshape(1,
+                                  3,
+                                  227, 227)
+
+
+        # It save the pixel intensity between 20n and 20(n+1)
+        d = []
+
+        SegmentsLength = 11
+
+        i_Video = cv2.VideoCapture(self.Video_path)
+
+        # get width of this video
+        wid = int(i_Video.get(3))
+
+        # get height of this video
+        hei = int(i_Video.get(4))
+
+        if i_Video.isOpened():
+            success = True
+        else:
+            success = False
+            print('Can\' open this video!')
+
+        # It save the number of frames in this video
+        FrameNumber = int(i_Video.get(7))
+
+        # The number of segments
+        Count = int(math.ceil(float(FrameNumber) / float(SegmentsLength)))
+        for i in range(Count):
+
+            i_Video.set(1, (SegmentsLength-1)*i)
+            ret1, frame_20i = i_Video.read()
+
+            if((SegmentsLength-1)*(i+1)) >= FrameNumber:
+                i_Video.set(1, FrameNumber-1)
+                ret2, frame_20i1 = i_Video.read()
+                # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+
+                transformed_image = transformer.preprocess('data', frame_20i1)
+                net.blobs['data'].data[...] = transformed_image
+                output = net.forward()
+                Frame_Last = np.squeeze(output['pool10'][0]).tolist()
+
+
+                transformed_image = transformer.preprocess('data', frame_20i)
+                net.blobs['data'].data[...] = transformed_image
+                output = net.forward()
+                Frame_First = np.squeeze(output['pool10'][0]).tolist()
+
+                d.append(self.cosin_distance(Frame_First, Frame_Last))
+                # d.append(self.getHist(frame_20i, frame_20i1, wid*hei))
+                break
+
+            i_Video.set(1, (SegmentsLength-1)*(i+1))
+            ret2, frame_20i1 = i_Video.read()
+
+            # d.append(np.sum(np.abs(self.RGBToGray(frame_20i) - self.RGBToGray(frame_20i1))))
+            transformed_image = transformer.preprocess('data', frame_20i1)
+            net.blobs['data'].data[...] = transformed_image
+            output = net.forward()
+            Frame_Last = np.squeeze(output['pool10'][0]).tolist()
+
+
+            transformed_image = transformer.preprocess('data', frame_20i)
+            net.blobs['data'].data[...] = transformed_image
+            output = net.forward()
+            Frame_First = np.squeeze(output['pool10'][0]).tolist()
+
+            d.append(self.cosin_distance(Frame_First, Frame_Last))
+
+
+
+            # The number of group
+        GroupNumber = int(math.ceil(float(FrameNumber) / 10.0))
+
+        MIUG = np.mean(d)
+        a = 0.5 # The range of a is 0.5~0.7
+        Tl = [] # It save the Tl of each group
+        CandidateSegment = []
+        for i in range(GroupNumber):
+
+
+
+            MIUL = np.mean(d[10*i:10*i+10])
+            SigmaL = np.std(d[10*i:10*i+10])
+
+            Tl.append(MIUL + a*(1+math.log(MIUG/MIUL))*SigmaL)
+            for j in range(10):
+                if i*10 + j >= len(d):
+                    break
+                if d[i*10+j]<Tl[i]:
+                    CandidateSegment.append([(i*10+j)*(SegmentsLength-1), (i*10+j+1)*(SegmentsLength-1)])
+                    #print 'A candidate segment is', (i*10+j)*20, '~', (i*10+j+1)*20
+
+
+        for i in range(1,len(d)-1):
+            if (d[i]>(3*d[i-1]) or d[i]>(3*d[i+1])) and d[i]> 0.8 * MIUG:
+                if [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)] not in CandidateSegment:
+                    j = 0
+                    while j < len(CandidateSegment):
+                        if (i+1)*(SegmentsLength-1)<= CandidateSegment[j][0]:
+                            CandidateSegment.insert(j, [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)])
+                            break
+                        j += 1
+        return CandidateSegment
+        #print 'a'
+
+
+
 
 
     # Calculate the cosin distance between vector1 and vector2
@@ -328,7 +457,7 @@ class JingweiXu():
             for j in range(len(CandidateSegments)):
                 if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GroundTruth[i][1], GroundTruth[i+1][0]):
                     break
-                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GroundTruth[i][1], GroundTruth[i+1][0]) is False and GroundTruth[i+1][0] < CandidateSegments[j][0]:
+                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GroundTruth[i][1], GroundTruth[i+1][0]) is False and j==len(CandidateSegments)-1:
                     if np.abs(GroundTruth[i][1] - GroundTruth[i+1][0]) != 1:
                         MissGra.append([GroundTruth[i][1],GroundTruth[i+1][0]])
                     else:
@@ -362,8 +491,9 @@ class JingweiXu():
         Tc = 0.05
 
         CandidateSegments = self.CutVideoIntoSegments()
-        # for i in range(len(CandidateSegments)):
-        #     FrameV = self.get_vector(CandidateSegments[i])
+
+        # CandidateSegments = self.CutVideoIntoSegmentsBaseOnNeuralNet()
+
         [HardCutTruth, GradualTruth] = self.CheckSegments(CandidateSegments)
 
         # It save the predicted shot boundaries
@@ -389,7 +519,8 @@ class JingweiXu():
             ret1, frame2 = i_Video.read()
             HistDifference = []
 
-
+            if CandidateSegments[i][0]>=14130:
+                print 'a'
             if self.getHist(frame1, frame2, wid*hei)>0.5:
                 for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
 
@@ -428,7 +559,8 @@ class JingweiXu():
                 # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 2 and (np.max(HistDifference)/np.min([_ for _ in HistDifference if _ >0.5])) >10:
                 #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
 
-
+                    if Answer[-1] == [1589, 1590]:
+                        print 'a'
                 if len(Answer) > 0 and len(Answer) > AnswerLength:
                     AnswerLength += 1
                     if Answer[-1] not in HardCutTruth:
@@ -552,3 +684,4 @@ if __name__ == '__main__':
     # test1.CutVideoIntoSegments()
 
     test1.CTDetectionBaseOnHist()
+    # test1.CheckSegments(test1.CutVideoIntoSegmentsBaseOnNeuralNet())
