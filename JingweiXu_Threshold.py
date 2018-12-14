@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/6.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_6.txt'
+    Video_path = '/data/RAIDataset/Video/2.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_2.txt'
 
     def get_vector(self, segments):
         import sys
@@ -493,9 +493,9 @@ class JingweiXu():
         k = 0.4
         Tc = 0.05
 
-        CandidateSegments = self.CutVideoIntoSegments()
+        # CandidateSegments = self.CutVideoIntoSegments()
 
-        # CandidateSegments = self.CutVideoIntoSegmentsBaseOnNeuralNet()
+        CandidateSegments = self.CutVideoIntoSegmentsBaseOnNeuralNet()
 
         [HardCutTruth, GradualTruth] = self.CheckSegments(CandidateSegments)
 
