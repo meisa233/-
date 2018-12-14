@@ -479,7 +479,6 @@ class JingweiXu():
 
                     # print 'This cut "', GroundTruth[i][1],',', GroundTruth[i+1][0],'"can not be detected'
                     # break
-
         return [HardCutTruth, GradualTruth]
 
 
