@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/8.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_8.txt'
+    Video_path = '/data/RAIDataset/Video/5.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_5.txt'
 
     def get_vector(self, segments):
         import sys
@@ -8,9 +8,7 @@ class JingweiXu():
         sys.path.insert(0, '/data/caffe/python')
         import caffe
         import cv2
-        import numpy as np
-        import math
-        import csv
+
 
         caffe.set_mode_gpu()
         caffe.set_device(0)
@@ -594,8 +592,8 @@ class JingweiXu():
                         MAXValue = HistDifference[-1]-HistDifference[-2]
                     if MAXValue>-1:
                         Answer.append(([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1]))
-                        if MAXValue>20 and len([_ for _ in HistDifference if _<0.1])==len(HistDifference)-1 and (np.argmax(HistDifference)!=0 and np.argmax(HistDifference)!=len(HistDifference)-1):
-                            AbsoluteCut.append([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1])
+                        # if MAXValue>20 and len([_ for _ in HistDifference if _<0.1])==len(HistDifference)-1 and (np.argmax(HistDifference)!=0 and np.argmax(HistDifference)!=len(HistDifference)-1):
+                        #     AbsoluteCut.append([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1])
                                 # print a
 
 
@@ -625,13 +623,13 @@ class JingweiXu():
 
             else:
                 for k2 in HardCutTruth:
-                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]) and Answer[-1]!=k2:
+                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]) and len(Answer)>0 and Answer[-1]!=k2:
                         print 'This cut has been missed : ', k2
         Miss = 0
         True_ = 0
         False_ = 0
 
-        AbsoluteFalse = 0
+        # AbsoluteFalse = 0
         for i in Answer:
             if i not in HardCutTruth:
                 print 'False :', i, '\n'
@@ -639,10 +637,10 @@ class JingweiXu():
             else:
                 True_ = True_ + 1
 
-        for i in AbsoluteCut:
-            if i not in HardCutTruth:
-                print 'False :', i, '\n'
-                AbsoluteFalse = AbsoluteFalse + 1
+        # for i in AbsoluteCut:
+        #     if i not in HardCutTruth:
+        #         print 'False :', i, '\n'
+        #         AbsoluteFalse = AbsoluteFalse + 1
 
 
         for i in HardCutTruth:
@@ -652,7 +650,7 @@ class JingweiXu():
         print 'False No. is', False_,'\n'
         print 'True No. is', True_, '\n'
         print 'Miss No. is', Miss, '\n'
-        print 'The false(MaxValue>20) No. is', AbsoluteFalse
+        # print 'The false(MaxValue>20) No. is', AbsoluteFalse
 
     # CT Detection base on CNN
     def CTDetection(self):
