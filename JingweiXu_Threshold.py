@@ -1,6 +1,6 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/6.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_6.txt'
+    Video_path = '/data/RAIDataset/Video/10.mp4'
+    GroundTruth_path = '/data/RAIDataset/Video/gt_10.txt'
 
     def get_vector(self, segments):
         import sys
@@ -569,7 +569,7 @@ class JingweiXu():
                     #     i_Video.set(1, j + 1 + jadd2)
                     #     ret2_, frame2_ = i_Video.read()
 
-                    HistDifference.append(self.getHist(frame1_, frame2_, wid*hei))
+                    HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
 
 
                 if np.max(HistDifference) > 0.1:# and len([_ for _ in HistDifference if _>0.1])<len(HistDifference):
