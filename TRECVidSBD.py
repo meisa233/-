@@ -1,12 +1,13 @@
 class JingweiXu():
-    Video_path = '/data/RAIDataset/Video/10.mp4'
-    GroundTruth_path = '/data/RAIDataset/Video/gt_10.txt'
 
-    # Get the Manhattan Distance
+
+
+    # Get the Manhattan Distance between vector1 and vector2
     def Manhattan(self, vector1, vector2):
         import numpy as np
         return np.sum(np.abs(vector1 - vector2))
 
+    # Get the Color Histogram from "frame"
     def GetFrameHist(self, frame, binsnumber):
         import cv2
         Bframehist = cv2.calcHist([frame], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
@@ -14,6 +15,7 @@ class JingweiXu():
         Rframehist = cv2.calcHist([frame], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
         return [Bframehist, Gframehist, Rframehist]
 
+    # Get the Manhattan distance between the histogram of frame1 and frame2
     def getHist_Manhattan(self, frame1, frame2, allpixels):
 
         binsnumber = 64
@@ -24,6 +26,7 @@ class JingweiXu():
         distance_Manhattan = self.Manhattan(Bframe1hist, Bframe2hist) + self.Manhattan(Gframe1hist, Gframe2hist) + self.Manhattan(Rframe1hist, Rframe2hist)
         return distance_Manhattan/allpixels
 
+    # Get the chi square distance between the histogram of frame1 and frame2
     def getHist_chi_square(self, frame1, frame2, allpixels):
         import cv2
         binsnumber = 64
@@ -34,6 +37,7 @@ class JingweiXu():
         chi_square_distance = cv2.compareHist(Bframe1hist, Bframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Gframe1hist, Gframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Rframe1hist, Rframe2hist, method=cv2.HISTCMP_CHISQR)
         return chi_square_distance/(allpixels)
 
+    # Cut the video into candidate segments(every segment's length is 10)
     def CutVideoIntoSegmentsBaseOnNeuralNet(self, VideoPath):
         import math
         import cv2
@@ -246,6 +250,7 @@ class JingweiXu():
     # Check the segments selected (by the function called CutVideoIntoSegments) whether have cut
     def CheckSegments(self, CandidateSegments, HardCutTruth, GradualTruth):
 
+
         import numpy as np
         MissHard = []
         MissGra = []
@@ -287,6 +292,7 @@ class JingweiXu():
         import cv2
         import math
 
+
         k = 0.4
         Tc = 0.05
 
@@ -316,52 +322,81 @@ class JingweiXu():
         # It saves the predicted transition numbers
         AnswerLength = 0
 
-        # It saves the absolute cut
-        AbsoluteCut = []
+
         for i in range(len(CandidateSegments)):
+            frame1add = 0
+            frame2add = 0
+            # frame1 saves the first frame of the segment's
+            i_Video.set(1, CandidateSegments[i][0])
+            ret1, frame1 = i_Video.read()
+
+            # Consider the situation that the frame that would be not extracted
+            while frame1 is None:
+                frame1add += 1
+                i_Video.set(1, CandidateSegments[i][0]+frame1add)
+                ret1, frame1 = i_Video.read()
+
+            # frame2 saves the last frame of the segment's
+            i_Video.set(1, CandidateSegments[i][1])
+            ret1, frame2 = i_Video.read()
+
+            # Consider the situation that the frame that would be not extracted
+            while frame2 is None:
+                frame2add +=1
+                i_Video.set(1, CandidateSegments[i][1]-frame2add)
+                ret1, frame2 = i_Video.read()
 
             HistDifference = []
 
             # if CandidateSegments[i][0]>=14130:
                 # print 'a'
+            if self.getHist_Manhattan(frame1, frame2, wid * hei) >= 0.45:
+                # Calculate the Manhattan distance from the frame1 and frame2 (Hist)
+                for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
+                    jadd1 = 0
+                    jadd2 = 0
+                    i_Video.set(1, j)
+                    ret1_, frame1_ = i_Video.read()
 
-            # Calculate the Manhattan distance from the frame1 and frame2 (Hist)
-            for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
-                jadd1 = 0
-                jadd2 = 0
-                i_Video.set(1, j)
-                ret1_, frame1_ = i_Video.read()
+                    i_Video.set(1, j+1)
+                    ret2_, frame2_ = i_Video.read()
 
-                i_Video.set(1, j+1)
-                ret2_, frame2_ = i_Video.read()
-
-                HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
+                    HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
 
 
-            if np.max(HistDifference) > 0.1:# and len([_ for _ in HistDifference if _>0.1])<len(HistDifference):
-                CandidatePeak = -1
-                MAXValue = -1
+                if np.max(HistDifference) > 0.1:# and len([_ for _ in HistDifference if _>0.1])<len(HistDifference):
+                    CandidatePeak = -1
+                    MAXValue = -1
 
-                # Spectial Situation #1
-                if HistDifference[0] > 0.1 and HistDifference[0] > HistDifference[1]:
-                    CandidatePeak = 0
-                    MAXValue = HistDifference[0] - HistDifference[1]
+                    # Spectial Situation #1
+                    if HistDifference[0] > 0.1 and HistDifference[0] > HistDifference[1]:
+                        CandidatePeak = 0
+                        MAXValue = HistDifference[0] - HistDifference[1]
 
-                for ii in range(1,len(HistDifference)-1):
-                    if HistDifference[ii]>0.1 and HistDifference[ii] > HistDifference[ii-1] and HistDifference[ii] > HistDifference[ii+1]:
-                        if np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])>MAXValue:
-                            CandidatePeak = ii
-                            MAXValue = np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])
+                    for ii in range(1,len(HistDifference)-1):
+                        if HistDifference[ii]>0.1 and HistDifference[ii] > HistDifference[ii-1] and HistDifference[ii] > HistDifference[ii+1]:
+                            if np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])>MAXValue:
+                                CandidatePeak = ii
+                                MAXValue = np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])
 
-                if HistDifference[-1] > 0.1 and HistDifference[-1] > HistDifference[-2] and (HistDifference[-1]-HistDifference[-2])>MAXValue:
-                    CandidatePeak = len(HistDifference)-1
-                    MAXValue = HistDifference[-1]-HistDifference[-2]
-                if MAXValue>-1:
-                    Answer.append(([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1]))
-                    # if MAXValue>20 and len([_ for _ in HistDifference if _<0.1])==len(HistDifference)-1 and (np.argmax(HistDifference)!=0 and np.argmax(HistDifference)!=len(HistDifference)-1):
-                    #     AbsoluteCut.append([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1])
-                            # print a
+                    if HistDifference[-1] > 0.1 and HistDifference[-1] > HistDifference[-2] and (HistDifference[-1]-HistDifference[-2])>MAXValue:
+                        CandidatePeak = len(HistDifference)-1
+                        MAXValue = HistDifference[-1]-HistDifference[-2]
+                    if MAXValue>-1:
+                        Answer.append(([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1]))
+                        # if MAXValue>20 and len([_ for _ in HistDifference if _<0.1])==len(HistDifference)-1 and (np.argmax(HistDifference)!=0 and np.argmax(HistDifference)!=len(HistDifference)-1):
+                        #     AbsoluteCut.append([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1])
+                                # print a
+                else:
+                    for k1 in HardCutTruth:
+                        if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k1[0], k1[1]) and \
+                                Answer[-1] != k1:
+                            print "cut", k1, "missed"
 
+            else:
+                for k2 in HardCutTruth:
+                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]) and len(Answer)>0 and Answer[-1]!=k2:
+                        print 'This cut has been missed : ', k2
 
             #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
             # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 1 and (np.max(HistDifference)/np.max([_ for _ in HistDifference if _ <=0.5]))>=10 :
@@ -382,10 +417,7 @@ class JingweiXu():
                 #         break
                 # if Flag is False:
                 #     print 'This is a false cut: ', Answer[-1]
-            else:
-                for k1 in HardCutTruth:
-                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k1[0], k1[1]) and Answer[-1]!=k1:
-                        print "cut", k1, "missed"
+
 
 
         Miss = 0
@@ -400,10 +432,7 @@ class JingweiXu():
             else:
                 True_ = True_ + 1
 
-        # for i in AbsoluteCut:
-        #     if i not in HardCutTruth:
-        #         print 'False :', i, '\n'
-        #         AbsoluteFalse = AbsoluteFalse + 1
+
 
 
         for i in HardCutTruth:
