@@ -678,6 +678,7 @@ class JingweiXu():
 
             print 'now, the recall rate is ', (float(AllHardLabels)-float(AllMiss)) / float(AllHardLabels)
 
+
         print 'a'
 
 if __name__ == '__main__':
