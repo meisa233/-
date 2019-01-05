@@ -15,6 +15,7 @@ class JingweiXu():
         Rframehist = cv2.calcHist([frame], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
         return [Bframehist, Gframehist, Rframehist]
 
+
     # Get the Manhattan distance between the histogram of frame1 and frame2
     def getHist_Manhattan(self, frame1, frame2, allpixels):
 
