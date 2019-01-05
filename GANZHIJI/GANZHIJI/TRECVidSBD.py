@@ -93,7 +93,6 @@ class JingweiXu():
                     if i==Count-Count%100-1:
                         Frame_Eigenvector = 
         
-
         NewCount = Count%100
         if NewCount>0:
             Frame_Eigenvector = []
