@@ -108,6 +108,7 @@ class JingweiXu():
                                                                                                        (
                                                                                                                    SegmentsLength - 1) * i]))]),
                                                    axis=0)
+
             net.blobs['data'].data[...] = Frame_Eigenvector
             output = net.forward()
             FrameSqueezeNetOUT = np.squeeze(output['pool10'][0]).tolist()
