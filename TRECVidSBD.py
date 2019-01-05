@@ -83,7 +83,7 @@ class JingweiXu():
         Count = int(math.ceil(float(FrameNumber) / float(SegmentsLength - 1)))
         NewCount = 0
         FrameSqueezeNetOUT = []
-        Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[0]))])
+
         if Count >= 100:
             for i in range(0,Count - Count % 100):
                 if i % 100 == 0:
