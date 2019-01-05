@@ -81,18 +81,19 @@ class JingweiXu():
 
         # The number of segments
         Count = int(math.ceil(float(FrameNumber) / float(SegmentsLength - 1)))
-        Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[0]))])
         NewCount = 0
         FrameSqueezeNetOUT = []
+        Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[0]))])
         if Count >= 100:
-            for i in range(1, Count - Count % 100):
-                Frame_Eigenvector = np.concatenate((Frame_Eigenvector, [transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength - 1) * i]))]),axis=0)
-                if (i + 1) % 100 == 0:
+            for i in range(1,Count - Count % 100):
+                Frame_Eigenvector = np.concatenate(Frame_Eigenvector, np.array([transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength - 1) * i]))]))
+                if i % 100 == 99:
                     net.blobs['data'].data[...] = Frame_Eigenvector
                     output = net.forward()
                     FrameSqueezeNetOUT.extend(np.squeeze(output['pool10']))
-                    if i == Count - Count % 100 - 1:
-                        Frame_Eigenvector =
+
+                    # if i == Count - Count % 100 - 1:
+                    #     Frame_Eigenvector =
 
         NewCount = Count % 100
         if NewCount > 0:
