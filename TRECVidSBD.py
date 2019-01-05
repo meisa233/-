@@ -97,7 +97,7 @@ class JingweiXu():
 
         NewCount = Count % 100
         if NewCount > 0:
-            Frame_Eigenvector = []
+            Frame_Eigenvector = [ ]
             net.blobs['data'].reshape(NewCount,
                                       3,
                                       227, 227)
