@@ -116,7 +116,7 @@ class JingweiXu():
 
             net.blobs['data'].data[...] = Frame_Eigenvector
             output = net.forward()
-            print 'a'
+
             FrameSqueezeNetOUT = np.squeeze(output['pool10'][0]).tolist()
             for i in range(NewCount - 1):
                 d.append(self.cosin_distance(FrameSqueezeNetOUT[i], FrameSqueezeNetOUT[i + 1]))
