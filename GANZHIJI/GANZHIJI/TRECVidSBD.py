@@ -1,7 +1,5 @@
 class JingweiXu():
 
-
-
     # Get the Manhattan Distance between vector1 and vector2
     def Manhattan(self, vector1, vector2):
         import numpy as np
@@ -10,9 +8,9 @@ class JingweiXu():
     # Get the Color Histogram from "frame"
     def GetFrameHist(self, frame, binsnumber):
         import cv2
-        Bframehist = cv2.calcHist([frame], channels=[0], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
-        Gframehist = cv2.calcHist([frame], channels=[1], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
-        Rframehist = cv2.calcHist([frame], channels=[2], mask=None, ranges=[0.0,255.0], histSize=[binsnumber])
+        Bframehist = cv2.calcHist([frame], channels=[0], mask=None, ranges=[0.0, 255.0], histSize=[binsnumber])
+        Gframehist = cv2.calcHist([frame], channels=[1], mask=None, ranges=[0.0, 255.0], histSize=[binsnumber])
+        Rframehist = cv2.calcHist([frame], channels=[2], mask=None, ranges=[0.0, 255.0], histSize=[binsnumber])
         return [Bframehist, Gframehist, Rframehist]
 
     # Get the Manhattan distance between the histogram of frame1 and frame2
@@ -23,8 +21,10 @@ class JingweiXu():
         [Bframe1hist, Gframe1hist, Rframe1hist] = self.GetFrameHist(frame1, binsnumber)
         [Bframe2hist, Gframe2hist, Rframe2hist] = self.GetFrameHist(frame2, binsnumber)
 
-        distance_Manhattan = self.Manhattan(Bframe1hist, Bframe2hist) + self.Manhattan(Gframe1hist, Gframe2hist) + self.Manhattan(Rframe1hist, Rframe2hist)
-        return distance_Manhattan/allpixels
+        distance_Manhattan = self.Manhattan(Bframe1hist, Bframe2hist) + self.Manhattan(Gframe1hist,
+                                                                                       Gframe2hist) + self.Manhattan(
+            Rframe1hist, Rframe2hist)
+        return distance_Manhattan / allpixels
 
     # Get the chi square distance between the histogram of frame1 and frame2
     def getHist_chi_square(self, frame1, frame2, allpixels):
@@ -34,8 +34,10 @@ class JingweiXu():
         [Bframe1hist, Gframe1hist, Rframe1hist] = self.GetFrameHist(frame1, binsnumber)
         [Bframe2hist, Gframe2hist, Rframe2hist] = self.GetFrameHist(frame2, binsnumber)
 
-        chi_square_distance = cv2.compareHist(Bframe1hist, Bframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Gframe1hist, Gframe2hist, method=cv2.HISTCMP_CHISQR)+cv2.compareHist(Rframe1hist, Rframe2hist, method=cv2.HISTCMP_CHISQR)
-        return chi_square_distance/(allpixels)
+        chi_square_distance = cv2.compareHist(Bframe1hist, Bframe2hist, method=cv2.HISTCMP_CHISQR) + cv2.compareHist(
+            Gframe1hist, Gframe2hist, method=cv2.HISTCMP_CHISQR) + cv2.compareHist(Rframe1hist, Rframe2hist,
+                                                                                   method=cv2.HISTCMP_CHISQR)
+        return chi_square_distance / (allpixels)
 
     # Cut the video into candidate segments(every segment's length is 10)
     def CutVideoIntoSegmentsBaseOnNeuralNet(self, VideoPath):
@@ -45,13 +47,13 @@ class JingweiXu():
         import numpy as np
         import caffe
 
-        #caffe.set_mode_gpu()
-        #caffe.set_device(0)
+        # caffe.set_mode_gpu()
+        # caffe.set_device(0)
         caffe.set_mode_cpu()
 
         WindowsPath = 'E:\\Meisa_SiameseNetwork\\SqueezeNet\\'
 
-        SqueezeNet_Def = WindowsPath +'deploy.prototxt'
+        SqueezeNet_Def = WindowsPath + 'deploy.prototxt'
         SqueezeNet_Weight = WindowsPath + 'squeezenet_v1.1.caffemodel'
         net = caffe.Net(SqueezeNet_Def,
                         SqueezeNet_Weight,
@@ -65,13 +67,12 @@ class JingweiXu():
                                   3,
                                   227, 227)
 
-
         # It save the pixel intensity between (SegmentsLength-1)*n and (SegmentsLength-1)*(n+1)
         d = []
 
         SegmentsLength = 11
 
-        AllFramesInThisVideo = glob(VideoPath+'\\*.jpeg')
+        AllFramesInThisVideo = glob(VideoPath + '\\*.jpeg')
 
         # It save the number of frames in this video
         FrameNumber = len(AllFramesInThisVideo)
@@ -79,71 +80,80 @@ class JingweiXu():
         LastFrameIndex = FrameNumber - 1
 
         # The number of segments
-        Count = int(math.ceil(float(FrameNumber) / float(SegmentsLength-1)))
-        Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[0]))])
+        Count = int(math.ceil(float(FrameNumber) / float(SegmentsLength - 1)))
         NewCount = 0
         FrameSqueezeNetOUT = []
-        if Count>=100:
-            for i in range(1,Count-Count%100):
-                Frame_Eigenvector = np.concatenate(( Frame_Eigenvector, [transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength-1)*i]))]), axis=0)
-                if (i+1)%100 == 0:
-                    net.blobs['data'].data[...] =  Frame_Eigenvector
+
+        if Count >= 100:
+            for i in range(0,Count - Count % 100):
+                if i % 100 == 0:
+                    Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[i]))])
+                else:
+                    Frame_Eigenvector = np.concatenate([Frame_Eigenvector, np.array([transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength - 1) * i]))])])
+                if i % 100 == 99:
+                    net.blobs['data'].data[...] = Frame_Eigenvector
                     output = net.forward()
                     FrameSqueezeNetOUT.extend(np.squeeze(output['pool10']))
-                    if i==Count-Count%100-1:
-                        Frame_Eigenvector = 
-        
-        NewCount = Count%100
-        if NewCount>0:
-            Frame_Eigenvector = []
+
+                    # if i == Count - Count % 100 - 1:
+                    #     Frame_Eigenvector =
+
+        NewCount = Count % 100
+        if NewCount > 0:
+            Frame_Eigenvector = [ ]
             net.blobs['data'].reshape(NewCount,
-                            3,
-                            227, 227)
+                                      3,
+                                      227, 227)
             for i in range(NewCount):
-                 Frame_Eigenvector = np.concatenate((Frame_Eigenvector, [transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength-1)*i]))]), axis=0)
-            net.blobs['data'].data[...] =  Frame_Eigenvector
+                Frame_Eigenvector = np.concatenate((Frame_Eigenvector, [transformer.preprocess('data',
+                                                                                               caffe.io.load_image(
+                                                                                                   AllFramesInThisVideo[
+                                                                                                       (
+                                                                                                                   SegmentsLength - 1) * i]))]),
+                                                   axis=0)
+
+            net.blobs['data'].data[...] = Frame_Eigenvector
             output = net.forward()
-            FrameSqueezeNetOUT = np.squeeze(output['pool10'][0]).tolist()                                   
-            for i in range(NewCount-1):
-                d.append(self.cosin_distance(FrameSqueezeNetOUT[i], FrameSqueezeNetOUT[i+1]))
+            FrameSqueezeNetOUT = np.squeeze(output['pool10'][0]).tolist()
+            for i in range(NewCount - 1):
+                d.append(self.cosin_distance(FrameSqueezeNetOUT[i], FrameSqueezeNetOUT[i + 1]))
 
         GroupLength = 10
         # The number of group
         GroupNumber = int(math.ceil(float(len(d)) / GroupLength))
 
         MIUG = np.mean(d)
-        a = 0.7 # The range of a is 0.5~0.7
-        Tl = [] # It save the Tl of each group
+        a = 0.7  # The range of a is 0.5~0.7
+        Tl = []  # It save the Tl of each group
         CandidateSegment = []
         for i in range(GroupNumber):
 
-            MIUL = np.mean(d[GroupLength*i:GroupLength*i+GroupLength])
-            SigmaL = np.std(d[GroupLength*i:GroupLength*i+GroupLength])
+            MIUL = np.mean(d[GroupLength * i:GroupLength * i + GroupLength])
+            SigmaL = np.std(d[GroupLength * i:GroupLength * i + GroupLength])
 
-            Tl.append(MIUL + a*(1+math.log(MIUG/MIUL))*SigmaL)
+            Tl.append(MIUL + a * (1 + math.log(MIUG / MIUL)) * SigmaL)
             for j in range(GroupLength):
-                if i*GroupLength + j >= len(d):
+                if i * GroupLength + j >= len(d):
                     break
-                if d[i*GroupLength+j]<Tl[i]:
-                    CandidateSegment.append([(i*GroupLength+j)*(SegmentsLength-1), (i*GroupLength+j+1)*(SegmentsLength-1)])
-                    #print 'A candidate segment is', (i*10+j)*20, '~', (i*10+j+1)*20
+                if d[i * GroupLength + j] < Tl[i]:
+                    CandidateSegment.append([(i * GroupLength + j) * (SegmentsLength - 1),
+                                             (i * GroupLength + j + 1) * (SegmentsLength - 1)])
+                    # print 'A candidate segment is', (i*10+j)*20, '~', (i*10+j+1)*20
 
-
-        for i in range(1,len(d)-1):
-            if (d[i]>(3*d[i-1]) or d[i]>(3*d[i+1])) and d[i]> 0.8 * MIUG:
-                if [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)] not in CandidateSegment:
+        for i in range(1, len(d) - 1):
+            if (d[i] > (3 * d[i - 1]) or d[i] > (3 * d[i + 1])) and d[i] > 0.8 * MIUG:
+                if [i * (SegmentsLength - 1), (i + 1) * (SegmentsLength - 1)] not in CandidateSegment:
                     j = 0
                     while j < len(CandidateSegment):
-                        if (i+1)*(SegmentsLength-1)<= CandidateSegment[j][0]:
-                            CandidateSegment.insert(j, [i*(SegmentsLength-1), (i+1)*(SegmentsLength-1)])
+                        if (i + 1) * (SegmentsLength - 1) <= CandidateSegment[j][0]:
+                            CandidateSegment.insert(j, [i * (SegmentsLength - 1), (i + 1) * (SegmentsLength - 1)])
                             break
                         j += 1
 
-        if CandidateSegment[-1][1]>LastFrameIndex:
+        if CandidateSegment[-1][1] > LastFrameIndex:
             CandidateSegment[-1][1] = LastFrameIndex
         return CandidateSegment
-        #print 'a'
-
+        # print 'a'
 
     # Calculate the cosin distance between vector1 and vector2
     def cosin_distance(self, vector1, vector2):
@@ -163,16 +173,14 @@ class JingweiXu():
     def getD1(self, Segment):
         return self.cosin_distance(Segment[0], Segment[-1])
 
-
-####################################The Following is used for evaluating################################################
+    ####################################The Following is used for evaluating################################################
     def if_overlap(self, begin1, end1, begin2, end2):
         if begin1 > begin2:
             begin1, end1, begin2, end2 = begin2, end2, begin1, end1
 
         return end1 >= begin2
 
-
-    def get_union_cnt(self,set1, set2):
+    def get_union_cnt(self, set1, set2):
         cnt = 0
         for begin, end in set1:
             for _begin, _end in set2:
@@ -181,7 +189,7 @@ class JingweiXu():
                     break
         return cnt
 
-    def recall_pre_f1(self,a, b, c):
+    def recall_pre_f1(self, a, b, c):
         a = float(a)
         b = float(b)
         c = float(c)
@@ -192,11 +200,10 @@ class JingweiXu():
 
     def eval(self, predict, gt):
 
-
-        gt_cuts = [(begin,end) for begin,end in gt if end-begin==1]
+        gt_cuts = [(begin, end) for begin, end in gt if end - begin == 1]
         gt_graduals = [(begin, end) for begin, end in gt if end - begin > 1]
 
-        predicts_cut = [(begin,end) for begin,end in predict if end-begin==1]
+        predicts_cut = [(begin, end) for begin, end in predict if end - begin == 1]
         predicts_gradual = [(begin, end) for begin, end in predict if end - begin > 1]
 
         cut_correct = self.get_union_cnt(gt_cuts, predicts_cut)
@@ -207,11 +214,8 @@ class JingweiXu():
 
     ##################################################################################
 
-
-
     # Check the segments selected (by the function called CutVideoIntoSegments) whether have cut
     def CheckSegments(self, CandidateSegments, HardCutTruth, GradualTruth):
-
 
         import numpy as np
         MissHard = []
@@ -220,7 +224,8 @@ class JingweiXu():
             for j in range(len(CandidateSegments)):
                 if CandidateSegments[j][1] < HardCutTruth[i][0]:
                     continue
-                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], HardCutTruth[i][0], HardCutTruth[i][1]):
+                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], HardCutTruth[i][0],
+                                   HardCutTruth[i][1]):
                     break
                 if CandidateSegments[j][0] > HardCutTruth[i][1]:
                     MissHard.append(HardCutTruth[i])
@@ -230,7 +235,8 @@ class JingweiXu():
             for j in range(len(CandidateSegments)):
                 if CandidateSegments[j][1] < GradualTruth[i][0]:
                     continue
-                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GradualTruth[i][0], GradualTruth[i][1]):
+                if self.if_overlap(CandidateSegments[j][0], CandidateSegments[j][1], GradualTruth[i][0],
+                                   GradualTruth[i][1]):
                     break
                 if CandidateSegments[j][0] > GradualTruth[i][1]:
                     MissGra.append(GradualTruth[i])
@@ -239,21 +245,15 @@ class JingweiXu():
         print "MissHard No. is ", len(MissHard)
         print "MissGra No. is ", len(MissGra)
 
-
-        print 'Hard Rate is ', (len(HardCutTruth) - len(MissHard))/float(len(HardCutTruth))
-        print 'Gra Rate is ', (len(GradualTruth) - len(MissGra))/float(len(GradualTruth))
+        print 'Hard Rate is ', (len(HardCutTruth) - len(MissHard)) / float(len(HardCutTruth))
+        print 'Gra Rate is ', (len(GradualTruth) - len(MissGra)) / float(len(GradualTruth))
 
         return [HardCutTruth, GradualTruth]
-
-
-
-
 
     def CTDetectionBaseOnHist(self, VideoPath, HardCutTruth, GradualTruth):
         import numpy as np
         import cv2
         import math
-
 
         k = 0.4
         Tc = 0.05
@@ -284,7 +284,6 @@ class JingweiXu():
         # It saves the predicted transition numbers
         AnswerLength = 0
 
-
         for i in range(len(CandidateSegments)):
             frame1add = 0
             frame2add = 0
@@ -295,7 +294,7 @@ class JingweiXu():
             # Consider the situation that the frame that would be not extracted
             while frame1 is None:
                 frame1add += 1
-                i_Video.set(1, CandidateSegments[i][0]+frame1add)
+                i_Video.set(1, CandidateSegments[i][0] + frame1add)
                 ret1, frame1 = i_Video.read()
 
             # frame2 saves the last frame of the segment's
@@ -304,14 +303,14 @@ class JingweiXu():
 
             # Consider the situation that the frame that would be not extracted
             while frame2 is None:
-                frame2add +=1
-                i_Video.set(1, CandidateSegments[i][1]-frame2add)
+                frame2add += 1
+                i_Video.set(1, CandidateSegments[i][1] - frame2add)
                 ret1, frame2 = i_Video.read()
 
             HistDifference = []
 
             # if CandidateSegments[i][0]>=14130:
-                # print 'a'
+            # print 'a'
             if self.getHist_Manhattan(frame1, frame2, wid * hei) >= 0.45:
                 # Calculate the Manhattan distance from the frame1 and frame2 (Hist)
                 for j in range(CandidateSegments[i][0], CandidateSegments[i][1]):
@@ -320,13 +319,12 @@ class JingweiXu():
                     i_Video.set(1, j)
                     ret1_, frame1_ = i_Video.read()
 
-                    i_Video.set(1, j+1)
+                    i_Video.set(1, j + 1)
                     ret2_, frame2_ = i_Video.read()
 
-                    HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid*hei))
+                    HistDifference.append(self.getHist_chi_square(frame1_, frame2_, wid * hei))
 
-
-                if np.max(HistDifference) > 0.1:# and len([_ for _ in HistDifference if _>0.1])<len(HistDifference):
+                if np.max(HistDifference) > 0.1:  # and len([_ for _ in HistDifference if _>0.1])<len(HistDifference):
                     CandidatePeak = -1
                     MAXValue = -1
 
@@ -335,20 +333,25 @@ class JingweiXu():
                         CandidatePeak = 0
                         MAXValue = HistDifference[0] - HistDifference[1]
 
-                    for ii in range(1,len(HistDifference)-1):
-                        if HistDifference[ii]>0.1 and HistDifference[ii] > HistDifference[ii-1] and HistDifference[ii] > HistDifference[ii+1]:
-                            if np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])>MAXValue:
+                    for ii in range(1, len(HistDifference) - 1):
+                        if HistDifference[ii] > 0.1 and HistDifference[ii] > HistDifference[ii - 1] and HistDifference[
+                            ii] > HistDifference[ii + 1]:
+                            if np.max([np.abs(HistDifference[ii] - HistDifference[ii - 1]),
+                                       np.abs(HistDifference[ii] - HistDifference[ii + 1])]) > MAXValue:
                                 CandidatePeak = ii
-                                MAXValue = np.max([np.abs(HistDifference[ii]-HistDifference[ii-1]), np.abs(HistDifference[ii]-HistDifference[ii+1])])
+                                MAXValue = np.max([np.abs(HistDifference[ii] - HistDifference[ii - 1]),
+                                                   np.abs(HistDifference[ii] - HistDifference[ii + 1])])
 
-                    if HistDifference[-1] > 0.1 and HistDifference[-1] > HistDifference[-2] and (HistDifference[-1]-HistDifference[-2])>MAXValue:
-                        CandidatePeak = len(HistDifference)-1
-                        MAXValue = HistDifference[-1]-HistDifference[-2]
-                    if MAXValue>-1:
-                        Answer.append(([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1]))
+                    if HistDifference[-1] > 0.1 and HistDifference[-1] > HistDifference[-2] and (
+                            HistDifference[-1] - HistDifference[-2]) > MAXValue:
+                        CandidatePeak = len(HistDifference) - 1
+                        MAXValue = HistDifference[-1] - HistDifference[-2]
+                    if MAXValue > -1:
+                        Answer.append(
+                            ([CandidateSegments[i][0] + CandidatePeak, CandidateSegments[i][0] + CandidatePeak + 1]))
                         # if MAXValue>20 and len([_ for _ in HistDifference if _<0.1])==len(HistDifference)-1 and (np.argmax(HistDifference)!=0 and np.argmax(HistDifference)!=len(HistDifference)-1):
                         #     AbsoluteCut.append([CandidateSegments[i][0]+CandidatePeak, CandidateSegments[i][0]+CandidatePeak+1])
-                                # print a
+                        # print a
                 else:
                     for k1 in HardCutTruth:
                         if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k1[0], k1[1]) and \
@@ -357,7 +360,8 @@ class JingweiXu():
 
             else:
                 for k2 in HardCutTruth:
-                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]) and len(Answer)>0 and Answer[-1]!=k2:
+                    if self.if_overlap(CandidateSegments[i][0], CandidateSegments[i][1], k2[0], k2[1]) and len(
+                            Answer) > 0 and Answer[-1] != k2:
                         print 'This cut has been missed : ', k2
 
             #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
@@ -366,8 +370,8 @@ class JingweiXu():
             # elif np.max(HistDifference) > 0.5 and len([_ for _ in HistDifference if _ >0.5]) == 2 and (np.max(HistDifference)/np.min([_ for _ in HistDifference if _ >0.5])) >10:
             #     Answer.append([CandidateSegments[i][0]+np.argmax(HistDifference), CandidateSegments[i][0]+np.argmax(HistDifference)+1])
 
-                # if Answer[-1] == [1589, 1590]:
-                #     print 'a'
+            # if Answer[-1] == [1589, 1590]:
+            #     print 'a'
             if len(Answer) > 0 and len(Answer) > AnswerLength:
                 AnswerLength += 1
                 if Answer[-1] not in HardCutTruth:
@@ -379,8 +383,6 @@ class JingweiXu():
                 #         break
                 # if Flag is False:
                 #     print 'This is a false cut: ', Answer[-1]
-
-
 
         Miss = 0
         True_ = 0
@@ -394,18 +396,14 @@ class JingweiXu():
             else:
                 True_ = True_ + 1
 
-
-
-
         for i in HardCutTruth:
             if i not in Answer:
                 Miss = Miss + 1
 
-        print 'False No. is', False_,'\n'
+        print 'False No. is', False_, '\n'
         print 'True No. is', True_, '\n'
         print 'Miss No. is', Miss, '\n'
         # print 'The false(MaxValue>20) No. is', AbsoluteFalse
-
 
     def GetLabels(self, xmlfile):
 
@@ -437,6 +435,7 @@ class JingweiXu():
             self.CTDetectionBaseOnHist(AllFolders[i], HardTruth, GraTruth)
 
         print 'a'
+
 
 if __name__ == '__main__':
     test1 = JingweiXu()
