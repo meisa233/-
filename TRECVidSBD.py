@@ -85,8 +85,9 @@ class JingweiXu():
         FrameSqueezeNetOUT = []
         Frame_Eigenvector = np.array([transformer.preprocess('data', caffe.io.load_image(AllFramesInThisVideo[0]))])
         if Count >= 100:
-            for i in range(1,Count - Count % 100):
-                Frame_Eigenvector = np.concatenate(Frame_Eigenvector, np.array([transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength - 1) * i]))]))
+            for i in range(0,Count - Count % 100):
+                if i % 100 == 0:
+                    Frame_Eigenvector = np.concatenate(Frame_Eigenvector, np.array([transformer.preprocess('data',caffe.io.load_image(AllFramesInThisVideo[(SegmentsLength - 1) * i]))]))
                 if i % 100 == 99:
                     net.blobs['data'].data[...] = Frame_Eigenvector
                     output = net.forward()
