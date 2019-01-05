@@ -1,10 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>803c444e-020d-440d-bc4e-4344715f7ea0</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>GANZHIJI.py</StartupFile>
+    <StartupFile>TRECVidSBD.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -12,7 +13,8 @@
     <Name>GANZHIJI</Name>
     <RootNamespace>GANZHIJI</RootNamespace>
     <IsWindowsApplication>False</IsWindowsApplication>
-    <InterpreterId>Global|PythonCore|3.6</InterpreterId>
+    <InterpreterId>{1d75f07d-6378-4bba-9e58-32c86b363199}</InterpreterId>
+    <InterpreterVersion>2.7</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,10 +25,18 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="av_test.py" />
+    <Compile Include="C3DTest.py" />
+    <Compile Include="C3DTest2.py" />
+    <Compile Include="ClipShots_test.py" />
     <Compile Include="GANZHIJI.py" />
+    <Compile Include="imageio_test.py" />
+    <Compile Include="JingweiXu_Threshold.py" />
+    <Compile Include="TRECVidSBD.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.6" />
+    <InterpreterReference Include="{1d75f07d-6378-4bba-9e58-32c86b363199}\2.7" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
